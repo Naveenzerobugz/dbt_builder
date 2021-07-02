@@ -1,0 +1,29 @@
+{
+  "id": 316,
+  "model_type": "aggregate",
+  "model_config": {
+    "agg_type": "sum",
+    "label": "top_Amount",
+    "agg_cols" : ["amount"],
+    "group_by_cols": ["email"]
+  },
+  "prev_model":
+    {
+      "id": 301,
+      "output_cols": [
+        {
+          "name":  "id",
+          "col_type": "String"
+        },
+        {
+          "name":  "amount",
+          "col_type": "Integer"
+        },
+        {
+          "name":  "email",
+          "col_type": "String"
+        }
+      ]
+    }
+}
+

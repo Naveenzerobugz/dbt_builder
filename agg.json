@@ -1,0 +1,43 @@
+{
+    "id": 425,
+    "model_type": "aggregate",
+    "model_config": {
+      "label": "top_Amount",
+      "agg_cols": [
+        {
+          "label": "fields__project__name",
+          "value": "fields__project__name"
+        }
+      ],
+      "agg_type": "max",
+      "group_by_cols": [
+        {
+          "label": "key",
+          "value": "key"
+        },
+        {
+          "label": "fields__project__name",
+          "value": "fields__project__name"
+        }
+      ]
+    },
+    "output_cols": [
+      {
+        "name": "id",
+        "col_type": "String"
+      },
+      {
+        "name": "fields__project__name",
+        "col_type": "String"
+      },
+      {
+        "name": "key",
+        "col_type": "String"
+      },
+      {
+        "name": "count",
+        "col_type": "String"
+      }
+    ],
+    "prev_model": null
+  }
