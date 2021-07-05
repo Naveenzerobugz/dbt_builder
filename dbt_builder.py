@@ -35,13 +35,16 @@ class TransformGenerator(object):
 
     def generate_for_model(self, model_data):
         prev_model_class = self.build_model_class(model_data['output_cols'])
-        builder = AbstractQueryBuilder.get_builder(model_data, prev_model_class)
-        stmt = builder.generate_query(self.session)
-        return stmt
+        model_type=model_data['model_type']
+        print(model_type)
+        if  model_type !=  "source":
+            builder = AbstractQueryBuilder.get_builder(model_data, prev_model_class)
+            stmt = builder.generate_query(self.session)
+            return stmt
 
     def build_model_class(self, prev_model_data):
 
-        model_name = 'model_{}'.format(prev_model_data['id'])
+        model_name = 'model_{}'.format(10)
         model_class = self.model_classes.get(model_name)
         if model_class is None:
             output_cols = prev_model_data
@@ -69,6 +72,8 @@ class AbstractQueryBuilder(object):
             return FilterQueryBuilder(model_data, prev_model_class)
         elif model_type == 'aggregate':
             return AggregateQueryBuilder(model_data, prev_model_class)
+        elif model_type == 'source':
+            print("source")
         else:
             raise NotImplementedError('model type not supported!')
 
@@ -79,11 +84,25 @@ class AbstractQueryBuilder(object):
 class FilterQueryBuilder(AbstractQueryBuilder):
 
     def generate_query(self, session):
-        criteria = self.model_data['model_config']['criteria']
-        output_cols = self.model_data['prev_model']['output_cols']
-        search = Search(session, 'transforms.dynamic_models', (self.model_class,), filter_by=criteria)
-        query = search.query()
-        return query.statement.compile(compile_kwargs={"literal_binds": True})
+        groupcount=self.model_data['model_config']['criteria']['groupcount']
+        criteria=self.model_data['model_config']['criteria']
+        filter_by={}
+        test={}
+        for i in range(groupcount): 
+            # filter_by[f"or"]=  criteria['rules'][f"group_{i+1}"]
+            filter_by=  {"or":criteria['rules'][f"group_{i+1}"]}
+            print(filter_by)
+            test={
+                *test,
+                filter_by
+            }
+  
+        print(filter_by)
+        # criteria = self.model_data['model_config']['criteria']
+        # output_cols = self.model_data['prev_model']['output_cols']
+        # search = Search(session, 'transforms.dynamic_models', (self.model_class,), filter_by=criteria)
+        # query = search.query()
+        # return query.statement.compile(compile_kwargs={"literal_binds": True})
 
 
 class AggregateQueryBuilder(AbstractQueryBuilder):
@@ -92,18 +111,20 @@ class AggregateQueryBuilder(AbstractQueryBuilder):
         agg_type = self.model_data['model_config']['agg_type']
         model_class = self.model_class
         model_config = self.model_data['model_config']
-        agg_col = model_class.__table__.c[model_config['agg_cols'][0]]
-        group_by_col = model_class.__table__.c[model_config['group_by_cols'][0]]
+        agg_col = model_class.__table__.c[model_config['agg_cols'][0]['value']]
+        group_by_col = model_class.__table__.c[model_config['group_by_cols'][0]['value']]
         if agg_type == 'sum':
             agg_func = func.sum(agg_col)
         elif agg_type == 'max':
             agg_func = func.max(agg_col)
         elif agg_type == 'min':
             agg_func = func.min(agg_col)
+        elif agg_type == 'avg':
+            agg_func = func.avg(agg_col)
         else:
             raise NotImplementedError('function not supported!')
         if 'label' in model_config:
-            agg_func = agg_func.label(model_config['label'])
+            agg_func = agg_func.label(model_config['agg_cols'][0]['label'])
         query = session.query(agg_func)
         query = query.select_from(model_class).group_by(group_by_col)
         return query.statement.compile(compile_kwargs={"literal_binds": True})
